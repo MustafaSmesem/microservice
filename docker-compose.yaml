@@ -1,0 +1,106 @@
+version: '3.7'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.9.11-management
+    mem_limit: 300m
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - currency-network
+    restart: always
+
+  config-server:
+    image: joumer/config-server:1.0-SNAPSHOT
+    mem_limit: 768m
+    ports:
+      - "9999:9999"
+    networks:
+      - currency-network
+    restart: always
+
+  naming-server:
+    image: joumer/naming-server:1.0-SNAPSHOT
+    mem_limit: 768m
+    ports:
+      - "8761:8761"
+    networks:
+      - currency-network
+    depends_on:
+      - config-server
+    restart: always
+
+  zipkin:
+    image: openzipkin/zipkin:2.23
+    mem_limit: 300m
+    ports:
+      - "9411:9411"
+    networks:
+      - currency-network
+    environment:
+      RABBIT_URI: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - rabbitmq
+    restart: always
+
+  api-gateway:
+    image: joumer/api-gateway:1.0-SNAPSHOT
+    mem_limit: 768m
+    ports:
+      - "8765:8765"
+    networks:
+      - currency-network
+    depends_on:
+      - naming-server
+      - rabbitmq
+
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://naming-server:8761/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin:9411/
+      SPRING.CONFIG.IMPORT: optional:configserver:http://config-server:9999
+      RABBIT_URI: amqp://guest:guest@rabbitmq:5672
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_ZIPKIN_SENDER_TYPE: rabbit
+    restart: always
+
+  currency-exchange:
+    image: joumer/currency-exchange:1.0-SNAPSHOT
+    mem_limit: 768m
+    ports:
+      - "9000:9000"
+    networks:
+      - currency-network
+    depends_on:
+      - naming-server
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://naming-server:8761/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin:9411/
+      SPRING.CONFIG.IMPORT: optional:configserver:http://config-server:9999
+      RABBIT_URI: amqp://guest:guest@rabbitmq:5672
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_ZIPKIN_SENDER_TYPE: rabbit
+    restart: always
+
+  currency-conversion:
+    image: joumer/currency-conversion:1.0-SNAPSHOT
+    mem_limit: 768m
+    ports:
+      - "9100:9100"
+    networks:
+      - currency-network
+    depends_on:
+      - naming-server
+      - rabbitmq
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://naming-server:8761/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin:9411/
+      SPRING.CONFIG.IMPORT: optional:configserver:http://config-server:9999
+      RABBIT_URI: amqp://guest:guest@rabbitmq:5672
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_ZIPKIN_SENDER_TYPE: rabbit
+    restart: always
+
+
+networks:
+  currency-network:

@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: naming-server
+  profiles:
+    active: test
+  config:
+    import: optional:configserver:http://localhost:9999
+
+server:
+  port: 8761
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false

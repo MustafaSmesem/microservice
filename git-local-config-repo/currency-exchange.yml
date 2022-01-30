@@ -1,0 +1,10 @@
+test:
+  hello: Hello my name is mustafa
+
+resilience4j:
+  retry:
+    instances:
+      sample-api:
+        maxAttempts: 4
+        waitDuration: 1s
+        enableExponentialBackoff: true
