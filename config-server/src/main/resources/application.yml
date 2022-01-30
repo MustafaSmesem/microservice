@@ -6,7 +6,7 @@ spring:
       server:
         default-label: master
         git:
-          uri: file:///Users/mustafatanitek/development/projects/microservices/complete/microservice/git-local-config-repo
+          uri: https://github.com/MustafaSmesem/microservice/blob/master/git-local-config-repo/
 
 server:
   port: 9999
